@@ -74,8 +74,10 @@ const App = () => {
     let stopDiscoverListener = BleManagerEmitter.addListener(
       'BleManagerDiscoverPeripheral',
       peripheral => {
-        peripherals.set(peripheral.id, peripheral);
-        setDiscoveredDevices(Array.from(peripherals.values()));
+        if (peripheral.name && peripheral.name.includes('MOCUTE')) {
+          peripherals.set(peripheral.id, peripheral);
+          setDiscoveredDevices(Array.from(peripherals.values()));
+        }
       },
     );
 
@@ -114,6 +116,16 @@ const App = () => {
     }
   };
 
+  const startNotifications = peripheral => {
+    BleManager.startNotification(peripheral.id, '1820', '2a4d')
+      .then(() => {
+        console.log('Started notification on ' + peripheral.id);
+      })
+      .catch(error => {
+        console.error('Notification error', error);
+      });
+  }
+
   const connect = peripheral => {
     BleManager.createBond(peripheral.id)
       .then(() => {
@@ -123,11 +135,16 @@ const App = () => {
         setConnectedDevices(Array.from(devices));
         setDiscoveredDevices(Array.from(devices));
         console.log('BLE device paired successfully');
+        // startNotifications(peripheral);
       })
       .catch(() => {
         throw Error('failed to bond');
       });
   };
+
+
+
+
 
   const disconnect = peripheral => {
     BleManager.removeBond(peripheral.id)
