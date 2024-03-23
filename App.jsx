@@ -116,6 +116,7 @@ const App = () => {
     }
   };
 
+//testing
   const startNotifications = peripheral => {
     BleManager.startNotification(peripheral.id, '1820', '2a4d')
       .then(() => {
@@ -125,17 +126,68 @@ const App = () => {
         console.error('Notification error', error);
       });
   }
+  
+// testing
+  async function exploreServicesAndCharacteristics(peripheralId) {
+    try {
+      console.log('Exploring services and characteristics for device:', peripheralId);
+      // Retrieve all services and characteristics for the device
+      const peripheralInfo = await BleManager.retrieveServices(peripheralId);
+      
+      console.log('Retrieved peripheral info:', peripheralInfo);
+      
+      // Iterate through all services
+      peripheralInfo.services.forEach((service) => {
+        console.log(`Service: ${service.uuid}`);
+        
+        // Find the characteristics for the service
+        const characteristics = peripheralInfo.characteristics.filter(c => c.service === service.uuid);
+        
+        // Iterate through characteristics for the current service
+        characteristics.forEach((characteristic) => {
+          console.log(`  Characteristic: ${characteristic.uuid} - Properties: `, characteristic.properties);
+        });
+      });
+    } catch (error) {
+      console.error('Error in exploreServicesAndCharacteristics:', error);
+    }
+  }
+
+  async function connectAndPrepare(peripheral) 
+  {
+    try {
+      // Before startNotification you need to call retrieveServices
+      console.log("retrieveServices",peripheral.id);
+      BleManager.retrieveServices(peripheral.id);
+      console.log("retrieveServices", peripheral);
+      let service = '00001812-0000-1000-8000-00805f9b34fb';
+      let characteristic = '00002a4d-0000-1000-8000-00805f9b34fb';
+      
+      // To enable BleManagerDidUpdateValueForCharacteristic listener
+      await BleManager.startNotification(peripheral.id, service, characteristic);
+      console.log('Started notification on ' + peripheral.id);
+  
+      //await BleManager.write(peripheral.id, service, characteristic, data_wr);
+      console.log('Write to peripheral');
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+
 
   const connect = peripheral => {
     BleManager.createBond(peripheral.id)
       .then(() => {
+        console.log('Peripheral id:', peripheral.id);
         peripheral.connected = true;
         peripherals.set(peripheral.id, peripheral);
         let devices = Array.from(peripherals.values());
         setConnectedDevices(Array.from(devices));
         setDiscoveredDevices(Array.from(devices));
         console.log('BLE device paired successfully');
-        // startNotifications(peripheral);
+        connectAndPrepare(peripheral);
+        //exploreServicesAndCharacteristics(peripheral.id);
       })
       .catch(() => {
         throw Error('failed to bond');
